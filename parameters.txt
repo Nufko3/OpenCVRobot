@@ -1,0 +1,29 @@
+- Batteries:
+
+Rpi battery:
+
+9.6 - 12.6 V
+4000 - 6000 mAh
+
+Motor battery:
+
+16 V
+1000 mAh
+
+
+- Usage:
+
+Rpi:
+
+3000 mA
+
+Lights:
+
+1000 mA
+
+Motors:
+
+1000 mA
+
+
+Runtime +/- 60 min.
