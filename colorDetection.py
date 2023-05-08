@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-#import time
+import time
 
 def nothing(a):
     pass
@@ -8,8 +8,8 @@ def nothing(a):
 l_h, l_s, l_v = 0, 0, 230 # 0, 0, 0
 u_h, u_s, u_v = 255, 255, 255 # 255, 255, 80
 
-exposure = 40 #-9
-minArea = 2000
+exposure = 6 #-9
+minArea = 5000
 
 displayWindows = 1
 
@@ -18,22 +18,23 @@ cv2.namedWindow("Camera", cv2.WINDOW_AUTOSIZE)
 if displayWindows:
     cv2.namedWindow("Value Editor")
     cv2.createTrackbar("Color", "Value Editor", 230, 255, nothing)
-    cv2.createTrackbar("Exposure", "Value Editor", 6, 30, nothing)
-    cv2.createTrackbar("Min Area", "Value Editor", 2000, 3000, nothing)
+    cv2.createTrackbar("Exposure", "Value Editor", 6, 40, nothing)
+    cv2.createTrackbar("Min Area", "Value Editor", 5000, 15000, nothing)
 
-capture = cv2.VideoCapture(1)
+capture = cv2.VideoCapture(0, cv2.CAP_V4L)
 
-capture.set(cv2.CAP_PROP_AUTO_WB, 0.0) # Disable auto white balance
-capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.0) # Disable auto exposure
+capture.set(cv2.CAP_PROP_AUTO_WB, 0) # Disable auto white balance
+capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # Disable auto exposure
 capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
 
 while True:
-    #loopStartTime = time.time() * 1000
+    loopStartTime = time.time() * 1000
+
     if displayWindows:
         l_v = cv2.getTrackbarPos("Color", "Value Editor")
-        exposure = cv2.getTrackbarPos("Exposure", "Value Editor") - 15.0
+        exposure = cv2.getTrackbarPos("Exposure", "Value Editor")
         minArea = cv2.getTrackbarPos("Min Area", "Value Editor")
-        #capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
+        capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
     
     ret, frame = capture.read()
     
@@ -61,7 +62,7 @@ while True:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
                 cv2.circle(frame, (cx, cy), 7, (255, 255, 255), -1)
                 cv2.putText(frame, f"{cx} {cy}", (cx - 20, cy - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            print(f"{cx} {cy}")
+            #print(f"{cx} {cy}")
     
     if displayWindows:
         res = cv2.bitwise_and(frame, frame, mask = mask)
@@ -73,8 +74,10 @@ while True:
     if cv2.waitKey(5) == ord('q'):
         break
 
-    '''
     loopEndTime = time.time() * 1000
+    print(loopEndTime - loopStartTime)
+    
+    '''
     waitTime = 0
 
     if loopEndTime - loopStartTime < 50:
