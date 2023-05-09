@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import time
+from platform import system
 
 def nothing(a):
     pass
@@ -11,10 +12,17 @@ u_h, u_s, u_v = 255, 255, 255 # 255, 255, 80
 l_b = np.array([l_h, l_s, l_v])
 u_b = np.array([u_h, u_s, u_v])
 
-exposure = 6 #-9
+exposure = 15
 minArea = 5000
 
 displayWindows = 1
+
+if system() == "Windows":
+    linux = 0
+else:
+    linux = 1
+
+print(linux)
 
 cv2.namedWindow("Camera", cv2.WINDOW_AUTOSIZE)
 
@@ -22,12 +30,18 @@ if displayWindows:
     cv2.namedWindow("Value Editor")
     cv2.createTrackbar("Color", "Value Editor", 230, 255, nothing)
     cv2.createTrackbar("Exposure", "Value Editor", exposure, 40, nothing)
-    cv2.createTrackbar("Min Area", "Value Editor", minArea, 15000, nothing)
+    cv2.createTrackbar("Min Area", "Value Editor", minArea, 30000, nothing)
 
-capture = cv2.VideoCapture(0, cv2.CAP_V4L)
+if linux:
+    capture = cv2.VideoCapture(0, cv2.CAP_V4L)
+
+    capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # Disable auto exposure
+else:
+    capture = cv2.VideoCapture(0)
+
+    capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0) # Disable auto exposure
 
 capture.set(cv2.CAP_PROP_AUTO_WB, 0) # Disable auto white balance
-capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # Disable auto exposure
 capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
 
 while True:
@@ -35,10 +49,12 @@ while True:
 
     if displayWindows:
         l_v = cv2.getTrackbarPos("Color", "Value Editor")
-        exposure = cv2.getTrackbarPos("Exposure", "Value Editor")
-        minArea = cv2.getTrackbarPos("Min Area", "Value Editor")
-        capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
         l_b = np.array([l_h, l_s, l_v])
+        exposure = cv2.getTrackbarPos("Exposure", "Value Editor")
+        if not linux:
+            exposure -= 8
+        capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
+        minArea = cv2.getTrackbarPos("Min Area", "Value Editor")
     
     ret, frame = capture.read()
     
