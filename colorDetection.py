@@ -8,6 +8,9 @@ def nothing(a):
 l_h, l_s, l_v = 0, 0, 230 # 0, 0, 0
 u_h, u_s, u_v = 255, 255, 255 # 255, 255, 80
 
+l_b = np.array([l_h, l_s, l_v])
+u_b = np.array([u_h, u_s, u_v])
+
 exposure = 6 #-9
 minArea = 5000
 
@@ -18,8 +21,8 @@ cv2.namedWindow("Camera", cv2.WINDOW_AUTOSIZE)
 if displayWindows:
     cv2.namedWindow("Value Editor")
     cv2.createTrackbar("Color", "Value Editor", 230, 255, nothing)
-    cv2.createTrackbar("Exposure", "Value Editor", 6, 40, nothing)
-    cv2.createTrackbar("Min Area", "Value Editor", 5000, 15000, nothing)
+    cv2.createTrackbar("Exposure", "Value Editor", exposure, 40, nothing)
+    cv2.createTrackbar("Min Area", "Value Editor", minArea, 15000, nothing)
 
 capture = cv2.VideoCapture(0, cv2.CAP_V4L)
 
@@ -35,13 +38,11 @@ while True:
         exposure = cv2.getTrackbarPos("Exposure", "Value Editor")
         minArea = cv2.getTrackbarPos("Min Area", "Value Editor")
         capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
+        l_b = np.array([l_h, l_s, l_v])
     
     ret, frame = capture.read()
     
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-    l_b = np.array([l_h, l_s, l_v])
-    u_b = np.array([u_h, u_s, u_v])
     
     mask = cv2.inRange(hsv, l_b, u_b)
  
