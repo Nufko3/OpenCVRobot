@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import time
 from platform import system
+from gpiozero import PWMLED
 
 def nothing(a):
     pass
@@ -11,6 +12,13 @@ u_h, u_s, u_v = 255, 255, 255 # 255, 255, 80
 
 l_b = np.array([l_h, l_s, l_v])
 u_b = np.array([u_h, u_s, u_v])
+
+redLed = PWMLED(25)
+greenLed = PWMLED(24)
+blueLed = PWMLED(23)
+
+leftM = PWMLED(12)
+rightM = PWMLED(13)
 
 exposure = 15
 minArea = 5000
@@ -29,11 +37,11 @@ cv2.namedWindow("Camera", cv2.WINDOW_AUTOSIZE)
 if displayWindows:
     cv2.namedWindow("Value Editor")
     cv2.createTrackbar("Color", "Value Editor", 230, 255, nothing)
-    cv2.createTrackbar("Exposure", "Value Editor", exposure, 40, nothing)
+    cv2.createTrackbar("Exposure", "Value Editor", exposure, 400, nothing)
     cv2.createTrackbar("Min Area", "Value Editor", minArea, 30000, nothing)
 
 if linux:
-    capture = cv2.VideoCapture(0, cv2.CAP_V4L)
+    capture = cv2.VideoCapture(0, cv2.CAP_V4L2)
 
     capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # Disable auto exposure
 else:
@@ -45,29 +53,29 @@ capture.set(cv2.CAP_PROP_AUTO_WB, 0) # Disable auto white balance
 capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
 
 while True:
-    loopStartTime = time.time() * 1000
+    #loopStartTime = time.time() * 1000
 
     if displayWindows:
         l_v = cv2.getTrackbarPos("Color", "Value Editor")
         l_b = np.array([l_h, l_s, l_v])
         exposure = cv2.getTrackbarPos("Exposure", "Value Editor")
-        if not linux:
-            exposure -= 8
+        '''if not linux:
+            exposure -= 8'''
         capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
         minArea = cv2.getTrackbarPos("Min Area", "Value Editor")
-    
+
     ret, frame = capture.read()
-    
+
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    
+
     mask = cv2.inRange(hsv, l_b, u_b)
- 
+
     cnts, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
- 
+
     if len(cnts) > 0:
 
         c = max(cnts, key = cv2.contourArea)
-            
+
         if cv2.contourArea(c) > minArea:
             cv2.drawContours(frame, [c], -1, (255, 0, 0), 3)
             M = cv2.moments(c)
@@ -80,7 +88,43 @@ while True:
                 cv2.circle(frame, (cx, cy), 7, (255, 255, 255), -1)
                 cv2.putText(frame, f"{cx} {cy}", (cx - 20, cy - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             #print(f"{cx} {cy}")
-    
+            
+            pos = cx - 380
+            print(pos)
+            
+            if pos < 50 and pos > -50:
+                print("F")
+                leftM.value = 0.2
+                rightM.value = 0.2
+            elif pos < -50:
+                print("L")
+                leftM.value = 0.2
+                rightM.value = 0.0
+            else:
+                print("R")
+                leftM.value = 0.0
+                rightM.value = 0.2
+
+            redLed.off()
+            greenLed.on()
+            blueLed.off()
+        else:
+            print("No line")
+            redLed.off()
+            greenLed.off()
+            blueLed.on()
+            
+            leftM.off()
+            rightM.off()
+    else:
+        print("No line")
+        redLed.off()
+        greenLed.off()
+        blueLed.on()
+        
+        leftM.off()
+        rightM.off()
+
     if displayWindows:
         res = cv2.bitwise_and(frame, frame, mask = mask)
  
@@ -91,8 +135,8 @@ while True:
     if cv2.waitKey(5) == ord('q'):
         break
 
-    loopEndTime = time.time() * 1000
-    print(loopEndTime - loopStartTime)
+    #loopEndTime = time.time() * 1000
+    #print(loopEndTime - loopStartTime)
     
     '''
     waitTime = 0
