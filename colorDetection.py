@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 import time
 from platform import system
-from gpiozero import PWMLED
+from gpiozero import PWMLED, Button
+import os
 
 def nothing(a):
     pass
@@ -13,12 +14,19 @@ u_h, u_s, u_v = 255, 255, 255 # 255, 255, 80
 l_b = np.array([l_h, l_s, l_v])
 u_b = np.array([u_h, u_s, u_v])
 
+powerButton = Button(26, pull_up = True, bounce_time = None)
+emergencyButton = None
+
 redLed = PWMLED(25)
 greenLed = PWMLED(24)
 blueLed = PWMLED(23)
 
 leftM = PWMLED(12)
 rightM = PWMLED(13)
+
+speed = 0.2
+P = 1
+centerPosition = 380
 
 exposure = 15
 minArea = 5000
@@ -89,9 +97,18 @@ while True:
                 cv2.putText(frame, f"{cx} {cy}", (cx - 20, cy - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             #print(f"{cx} {cy}")
             
-            pos = cx - 380
-            print(pos)
-            
+            error = cx - centerPosition
+            error = max(-centerPosition, min(centerPosition, error))
+            error /= centerPosition
+            errorP = P * error
+            errorL = max(0, min(1, errorP))
+            errorR = max(-1, min(0, errorP))
+            print(f"{error}\t{errorL}\t{errorR}\t{(1 - errorL) * speed}\t{(1 + errorR) * speed}")
+
+            leftM.value = (1 - errorL) * speed
+            rightM.value = (1 + errorR) * speed
+
+            '''
             if pos < 50 and pos > -50:
                 print("F")
                 leftM.value = 0.2
@@ -103,7 +120,7 @@ while True:
             else:
                 print("R")
                 leftM.value = 0.0
-                rightM.value = 0.2
+                rightM.value = 0.2'''
 
             redLed.off()
             greenLed.on()
@@ -131,7 +148,24 @@ while True:
         cv2.imshow("Camera", frame)
         cv2.imshow("Mask", mask)
         cv2.imshow("Result", res)
-    
+
+    if powerButton.is_pressed:
+        redLed.on()
+        greenLed.off()
+        blueLed.off()
+        leftM.off()
+        rightM.off()
+
+        print("Power button pressed! Release to cancel shutdown")
+
+        time.sleep(5)
+
+        if powerButton.is_pressed:
+            os.system("shutdown")
+            break
+        else:
+            print("Power button released. Shutdown cancelled")
+
     if cv2.waitKey(5) == ord('q'):
         break
 
