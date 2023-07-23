@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
 import time
-from platform import system
+from platform import system as platform
 from gpiozero import PWMLED, Button
-import os
+from os import system
 from sys import argv
 
 def nothing(a):
@@ -35,8 +35,8 @@ redLed = PWMLED(25)
 greenLed = PWMLED(24)
 blueLed = PWMLED(23)
 
-leftM = PWMLED(12)
-rightM = PWMLED(13)
+leftM = PWMLED(12, frequency = 5000)
+rightM = PWMLED(13, frequency = 5000)
 
 speed = 0.2
 P = 0.75
@@ -50,7 +50,7 @@ displayWindows = 0
 lineLostCount = 0
 maxLineLostCount = 20
 
-if system() == "Windows":
+if platform() == "Windows": #platform.system
     linux = 0
 else:
     linux = 1
@@ -180,7 +180,7 @@ while True:
         time.sleep(5)
 
         if powerButtonPressed:
-            os.system("shutdown")
+            system("shutdown")
             break
         else:
             print("Power button released. Shutdown cancelled")
